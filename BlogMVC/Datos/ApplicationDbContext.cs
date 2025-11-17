@@ -13,5 +13,8 @@ namespace BlogMVC.Datos
         protected ApplicationDbContext()
         {
         }
+
+        public DbSet<Entrada> Entradas { get; set; }
+        public DbSet<Comentario> Comentarios { get; set; }
     }
 }
