@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using BlogMVC.Servicios
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -23,9 +24,12 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        @if (User.IsInRole(Constantes.RolAdmin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Usuarios" asp-action="Listado">Listado Usuarios</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LinksLogin"></partial>
                 </div>

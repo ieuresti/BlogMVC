@@ -1,0 +1,41 @@
+﻿@model UsuariosListadoViewModel
+
+@{
+    ViewData["Title"] = "Listado de usuarios";
+}
+
+<h1>Listado de usuarios</h1>
+
+@if (Model.Mensaje is not null)
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Mensaje
+    </div>
+}
+
+@if (Model.Usuarios is not null)
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <td>Accion</td>
+                <td>Email</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var usuario in Model.Usuarios)
+            {
+                <tr>
+                    <td>
+                        <a class="btn btn-primary me-2">Editar Roles</a>
+                    </td>
+                    <td>@usuario.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No hay usuarios para mostrar</p>
+}
