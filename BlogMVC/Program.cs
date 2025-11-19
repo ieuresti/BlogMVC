@@ -1,9 +1,13 @@
 using BlogMVC.Datos;
 using BlogMVC.Entidades;
 using BlogMVC.Servicios;
+using BlogMVC.Utilidades;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
+builder.Services.AddTransient<IServicioUsuarios, ServicioUsuarios>();
 // Para inyectar DbContext en Blazor es recomendable usar AddDbContextFactory
-builder.Services.AddDbContextFactory<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection"));
+builder.Services.AddDbContextFactory<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection")
+// El seeding es el proceso de introducir datos iniciales o imprescindibles en la bd al arrancar la aplicación(ej roles, usuarios admin, datos de ej).Garantiza que la app tenga la config mínima necesaria para funcionar.
+// La clase Seeding inserta una lista de roles en la bd en la tabla de IdentityRole si no existen.
+.UseSeeding(Seeding.Aplicar)
+.UseAsyncSeeding(Seeding.AplicarAsync)
+);
 // Configurar Identity
 builder.Services.AddIdentity<Usuario, IdentityRole>(opciones =>
 {
