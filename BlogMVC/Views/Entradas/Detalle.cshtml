@@ -1,11 +1,18 @@
-﻿@model EntradaDetalleViewModel
+﻿@using BlogMVC.Servicios
+@model EntradaDetalleViewModel
 
 @{
     ViewData["Title"] = Model.Titulo;
     var fechaFormateada = Model.FechaPublicacion.ToString("dd MMM, yyyy");
 }
 
-<h3>@Model.Titulo</h3>
+<div class="d-flex justify-content-between">
+    <h3>@Model.Titulo</h3>
+    @if (User.IsInRole(Constantes.CRUDEntradas) || User.IsInRole(Constantes.RolAdmin))
+    {
+        <a class="btn btn-primary" asp-action="Editar" asp-route-id="@Model.Id">Editar esta entrada</a>
+    }
+</div>
 
 <h6>@Model.EscritoPor | @fechaFormateada</h6>
 

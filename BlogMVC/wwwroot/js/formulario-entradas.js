@@ -10,6 +10,10 @@
     theme: 'snow', // or 'bubble'
 });
 
+function cargarContenido(contenido) {
+    quill.setContents(contenido, 'silent');
+}
+
 function btnEnviarClick() {
     let esValido = validarFormularioCompleto();
     if (!esValido) {

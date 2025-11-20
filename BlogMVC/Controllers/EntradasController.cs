@@ -86,5 +86,66 @@ namespace BlogMVC.Controllers
             await context.SaveChangesAsync();
             return RedirectToAction("Detalle", new { id = entrada.Id });
         }
+
+        [HttpGet]
+        [Authorize(Roles = $"{Constantes.RolAdmin},{Constantes.CRUDEntradas}")]
+        public async Task<IActionResult> Editar(int id)
+        {
+            var entrada = await context.Entradas.FirstOrDefaultAsync(x => x.Id == id);
+            if (entrada is null)
+            {
+                return RedirectToAction("NoEncontrado", "Home");
+            }
+
+            var modelo = new EntradaEditarViewModel
+            {
+                Id = entrada.Id,
+                Titulo = entrada.Titulo,
+                Cuerpo = entrada.Cuerpo,
+                ImagenPortadaActual = entrada.PortadaUrl
+            };
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = $"{Constantes.RolAdmin},{Constantes.CRUDEntradas}")]
+        public async Task<IActionResult> Editar(EntradaEditarViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+            // Obtener la entrada de la base de datos
+            var entradaDB = await context.Entradas.FirstOrDefaultAsync(x => x.Id == modelo.Id);
+            if (entradaDB is null)
+            {
+                return RedirectToAction("NoEncontrado", "Home");
+            }
+
+            string? portadaUrl = null;
+            if (modelo.ImagenPortada is not null)
+            {
+                // Si no es null, significa que el usuario subio una nueva imagen para cambiarla por la actual
+                portadaUrl = await almacenadorArchivos.Editar(modelo.ImagenPortadaActual, contenedor, modelo.ImagenPortada);
+            } else if (modelo.ImagenRemovida)
+            {
+                // El usuario decidio borrar la imagen actual sin subir una nueva
+                await almacenadorArchivos.Borrar(modelo.ImagenPortadaActual, contenedor);
+            } else
+            {
+                // El usuario decidio mantener la imagen actual
+                portadaUrl = entradaDB.PortadaUrl;
+            }
+
+            string usuarioId = servicioUsuarios.ObtenerUsuarioId();
+            // Actualizar los demas campos de la entrada
+            entradaDB.Titulo = modelo.Titulo;
+            entradaDB.Cuerpo = modelo.Cuerpo;
+            entradaDB.PortadaUrl = portadaUrl;
+            entradaDB.UsuarioActualizacionId = usuarioId;
+            // Guardar los cambios en la bd
+            await context.SaveChangesAsync();
+            return RedirectToAction("Detalle", new { id = entradaDB.Id } );
+        }
     }
 }
