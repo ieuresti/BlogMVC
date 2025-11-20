@@ -5,6 +5,7 @@ using BlogMVC.Servicios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogMVC.Controllers
 {
@@ -23,6 +24,31 @@ namespace BlogMVC.Controllers
             this.context = context;
             this.almacenadorArchivos = almacenadorArchivos;
             this.servicioUsuarios = servicioUsuarios;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Detalle(int id)
+        {
+            var entrada = await context.Entradas
+                .Include(x => x.UsuarioCreacion) // Incluir la data del usuario que creo la entrada
+                .Include(x => x.Comentarios) // Incluir los comentarios de la entrada
+                    .ThenInclude(x => x.Usuario) // Incluir la data del usuario que hizo cada comentario
+                .FirstOrDefaultAsync(x => x.Id == id);
+            if (entrada is null)
+            {
+                return RedirectToAction("NoEncontrado", "Home");
+            }
+
+            var modelo = new EntradaDetalleViewModel
+            {
+                Id = id,
+                Titulo = entrada.Titulo,
+                Cuerpo = entrada.Cuerpo,
+                PortadaUrl = entrada.PortadaUrl,
+                EscritoPor = entrada.UsuarioCreacion!.Nombre,
+                FechaPublicacion = entrada.FechaPublicacion
+            };
+            return View(modelo);
         }
 
         [HttpGet]
