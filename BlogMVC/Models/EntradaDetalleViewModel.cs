@@ -12,5 +12,6 @@ namespace BlogMVC.Models
         public required string EscritoPor { get; set; }
         public DateTime FechaPublicacion { get; set; }
         public bool EntradaBorrada { get; set; }
+        public IEnumerable<ComentarioViewModel> Comentarios { get; set; } = [];
     }
 }

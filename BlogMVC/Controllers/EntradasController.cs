@@ -31,6 +31,7 @@ namespace BlogMVC.Controllers
         public async Task<IActionResult> Detalle(int id)
         {
             var entrada = await context.Entradas
+                .IgnoreQueryFilters() // Ignorar los filtros globales para ver entradas borradas
                 .Include(x => x.UsuarioCreacion) // Incluir la data del usuario que creo la entrada
                 .Include(x => x.Comentarios) // Incluir los comentarios de la entrada
                     .ThenInclude(x => x.Usuario) // Incluir la data del usuario que hizo cada comentario
@@ -49,6 +50,20 @@ namespace BlogMVC.Controllers
                 return RedirectToAction("Login", "Usuarios", new { urlRetorno });
             }
 
+            // Comprobar si el usuario actual tiene el rol Admin o BorraComentarios
+            var usuarioId = servicioUsuarios.ObtenerUsuarioId();
+            var puedeBorrarComentarios = false;
+            if (!string.IsNullOrEmpty(usuarioId))
+            {
+                puedeBorrarComentarios = await context.UserRoles
+                    .Join(context.Roles,
+                          ur => ur.RoleId,
+                          r => r.Id,
+                          (ur, r) => new { UserRole = ur, Role = r })
+                    .AnyAsync(x => x.UserRole.UserId == usuarioId &&
+                                   (x.Role.Name == Constantes.RolAdmin || x.Role.Name == Constantes.BorraComentarios));
+            }
+
             var modelo = new EntradaDetalleViewModel
             {
                 Id = id,
@@ -57,7 +72,15 @@ namespace BlogMVC.Controllers
                 PortadaUrl = entrada.PortadaUrl,
                 EscritoPor = entrada.UsuarioCreacion!.Nombre,
                 FechaPublicacion = entrada.FechaPublicacion,
-                EntradaBorrada = entrada.Borrado
+                EntradaBorrada = entrada.Borrado,
+                Comentarios = entrada.Comentarios.Select(x => new ComentarioViewModel
+                {
+                    Id = x.Id,
+                    Cuerpo = x.Cuerpo,
+                    EscritoPor = x.Usuario!.Nombre,
+                    FechaPublicacion = x.FechaPublicacion,
+                    MostrarBotonBorrar = puedeBorrarComentarios || usuarioId == x.UsuarioId
+                })
             };
             return View(modelo);
         }
@@ -102,7 +125,10 @@ namespace BlogMVC.Controllers
         [Authorize(Roles = $"{Constantes.RolAdmin},{Constantes.CRUDEntradas}")]
         public async Task<IActionResult> Editar(int id)
         {
-            var entrada = await context.Entradas.FirstOrDefaultAsync(x => x.Id == id);
+            var entrada = await context.Entradas.
+                IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id);
+
             if (entrada is null)
             {
                 return RedirectToAction("NoEncontrado", "Home");
@@ -127,7 +153,7 @@ namespace BlogMVC.Controllers
                 return View(modelo);
             }
             // Obtener la entrada de la base de datos
-            var entradaDB = await context.Entradas.FirstOrDefaultAsync(x => x.Id == modelo.Id);
+            var entradaDB = await context.Entradas.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == modelo.Id);
             if (entradaDB is null)
             {
                 return RedirectToAction("NoEncontrado", "Home");
@@ -163,7 +189,7 @@ namespace BlogMVC.Controllers
         [Authorize(Roles = $"{Constantes.RolAdmin},{Constantes.CRUDEntradas}")]
         public async Task<IActionResult> Borrar(int id, bool borrado)
         {
-            var entradaDB = await context.Entradas.FirstOrDefaultAsync(x => x.Id == id);
+            var entradaDB = await context.Entradas.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
             if (entradaDB is null)
             {
                 return RedirectToAction("NoEncontrado", "Home");

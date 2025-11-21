@@ -1,0 +1,16 @@
+﻿@using BlogMVC.Entidades
+@model Comentario
+
+@{
+    ViewData["Title"] = "Borrar comentario";
+}
+
+<h1>Se borrara el siguiente comentario</h1>
+
+<p>@Model.Cuerpo</p>
+
+<form asp-action="borrarComentario">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Borrar comentario</button>
+    <a class="btn btn-secondary" asp-action="Detalle" asp-controller="Entradas" asp-route-id="@Model.EntradaId">Cancelar</a>
+</form>
