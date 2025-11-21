@@ -12,5 +12,6 @@ namespace BlogMVC.Models
         public required string Password { get; set; }
         [Display(Name = "Recuerdame")]
         public bool Recuerdame { get; set; }
+        public string? UrlRetorno { get; set; }
     }
 }

@@ -6,11 +6,23 @@
     var fechaFormateada = Model.FechaPublicacion.ToString("dd MMM, yyyy");
 }
 
-<div class="d-flex justify-content-between">
+<div class="d-flex justify-content-between align-items-center flex-wrap">
     <h3>@Model.Titulo</h3>
     @if (User.IsInRole(Constantes.CRUDEntradas) || User.IsInRole(Constantes.RolAdmin))
     {
-        <a class="btn btn-primary" asp-action="Editar" asp-route-id="@Model.Id">Editar esta entrada</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" asp-action="Editar" asp-route-id="@Model.Id">Editar esta entrada</a>
+            <form asp-action="Borrar" style="display: inline">
+                <input type="hidden" name="Id" id="id" value="@Model.Id" />
+                @if (Model.EntradaBorrada)
+                {
+                    <button class="btn btn-secondary" asp-action="Borrar" asp-route-borrado="false">Restaurar</button>
+                } else
+                {
+                    <button class="btn btn-danger" asp-action="Borrar" asp-route-borrado="true">Borrar</button>
+                }
+            </form>
+        </div>
     }
 </div>
 

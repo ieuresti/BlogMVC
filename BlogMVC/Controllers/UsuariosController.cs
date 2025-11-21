@@ -58,11 +58,15 @@ namespace BlogMVC.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Login(string mensaje = null)
+        public IActionResult Login(string mensaje = null, string? urlRetorno = null)
         {
             if (mensaje is not null)
             {
                 ViewData["mensaje"] = mensaje;
+            }
+            if (urlRetorno is not null)
+            {
+                ViewData["urlRetorno"] = urlRetorno;
             }
             return View();
         }
@@ -79,7 +83,15 @@ namespace BlogMVC.Controllers
             var resultado = await signInManager.PasswordSignInAsync(modelo.Email, modelo.Password, modelo.Recuerdame, lockoutOnFailure: false);
             if (resultado.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                if (string.IsNullOrWhiteSpace(modelo.UrlRetorno))
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                     return LocalRedirect(modelo.UrlRetorno);
+                }
+
             }
             else
             {

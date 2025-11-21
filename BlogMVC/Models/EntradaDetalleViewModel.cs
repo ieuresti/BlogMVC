@@ -11,5 +11,6 @@ namespace BlogMVC.Models
         public string? PortadaUrl { get; set; }
         public required string EscritoPor { get; set; }
         public DateTime FechaPublicacion { get; set; }
+        public bool EntradaBorrada { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using BlogMVC.Entidades;
 using BlogMVC.Models;
 using BlogMVC.Servicios;
+using BlogMVC.Utilidades;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,15 @@ namespace BlogMVC.Controllers
                 return RedirectToAction("NoEncontrado", "Home");
             }
 
+            if (entrada.Borrado && context.UserRoles
+                .FirstOrDefault(x => x.UserId == servicioUsuarios.ObtenerUsuarioId() &&
+                                     x.RoleId == context.Roles
+                                        .FirstOrDefault(r => r.Name == Constantes.RolAdmin)!.Id) is null)
+            {
+                var urlRetorno = HttpContext.ObtenerUrlRetorno();
+                return RedirectToAction("Login", "Usuarios", new { urlRetorno });
+            }
+
             var modelo = new EntradaDetalleViewModel
             {
                 Id = id,
@@ -46,7 +56,8 @@ namespace BlogMVC.Controllers
                 Cuerpo = entrada.Cuerpo,
                 PortadaUrl = entrada.PortadaUrl,
                 EscritoPor = entrada.UsuarioCreacion!.Nombre,
-                FechaPublicacion = entrada.FechaPublicacion
+                FechaPublicacion = entrada.FechaPublicacion,
+                EntradaBorrada = entrada.Borrado
             };
             return View(modelo);
         }
@@ -144,6 +155,20 @@ namespace BlogMVC.Controllers
             entradaDB.PortadaUrl = portadaUrl;
             entradaDB.UsuarioActualizacionId = usuarioId;
             // Guardar los cambios en la bd
+            await context.SaveChangesAsync();
+            return RedirectToAction("Detalle", new { id = entradaDB.Id } );
+        }
+
+        [HttpPost]
+        [Authorize(Roles = $"{Constantes.RolAdmin},{Constantes.CRUDEntradas}")]
+        public async Task<IActionResult> Borrar(int id, bool borrado)
+        {
+            var entradaDB = await context.Entradas.FirstOrDefaultAsync(x => x.Id == id);
+            if (entradaDB is null)
+            {
+                return RedirectToAction("NoEncontrado", "Home");
+            }
+            entradaDB.Borrado = borrado;
             await context.SaveChangesAsync();
             return RedirectToAction("Detalle", new { id = entradaDB.Id } );
         }
