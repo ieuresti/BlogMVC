@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="~/BlogMVC.styles.css" asp-append-version="true" />
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+
+    <base href="~/" />
+    <!-- Esto es para que Blazor pueda renderizar componentes en paginas MVC -->
+    <component type="typeof(Microsoft.AspNetCore.Components.Web.HeadOutlet)" render-mode="ServerPrerendered"></component>
 </head>
 <body>
     <header>

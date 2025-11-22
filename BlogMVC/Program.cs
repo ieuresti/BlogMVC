@@ -11,6 +11,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddServerSideBlazor();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -58,5 +60,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+// Manejar todo lo relacionado a las peticiones de Blazor
+app.MapBlazorHub();
 
 app.Run();

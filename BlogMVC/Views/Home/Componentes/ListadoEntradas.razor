@@ -1,0 +1,66 @@
+﻿@using BlogMVC.Datos
+@using BlogMVC.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> dbFactory
+@implements IDisposable
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var entrada in entradas)
+    {
+        <div class="col">
+            <div class="card h-100">
+                @if (string.IsNullOrEmpty(entrada.PortadaUrl))
+                {
+                    <a href="/entradas/detalle/@entrada.Id">
+                        <img src="/img/no-img.jpg" class="card-img-top" alt="portada-entrada" />
+                    </a>
+                } else
+                {
+                    <a href="/entradas/detalle/@entrada.Id">
+                        <img src="@entrada.PortadaUrl" class="card-img-top" alt="portada-entrada" />
+                    </a>
+                }
+                
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a class="text-decoration-none" href="/entradas/detalle/@entrada.Id">@entrada.Titulo</a>
+                    </h5>
+                    <p class="card-text">
+                        <small class="text-body-secondary">@entrada.FechaPublicacion.ToString("dd MMM yyyy")</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private ApplicationDbContext? context { get; set; }
+    private List<HomeIndexEntradaViewModel> entradas = [];
+
+    // Inicializar el contexto cuando el componente se inicialice
+    protected override async Task OnInitializedAsync()
+    {
+        context = dbFactory.CreateDbContext();
+        await BuscarEntradas();
+    }
+
+    private async Task BuscarEntradas()
+    {
+        entradas = await context!.Entradas
+            .OrderByDescending(x => x.FechaPublicacion)
+            .Select(x => new HomeIndexEntradaViewModel
+            {
+                Id = x.Id,
+                Titulo = x.Titulo,
+                PortadaUrl = x.PortadaUrl,
+                FechaPublicacion = x.FechaPublicacion
+            }).ToListAsync();
+    }
+
+    // Liberar el contexto cuando el componente se destruya
+    public void Dispose()
+    {
+        context?.Dispose();
+    }
+}
