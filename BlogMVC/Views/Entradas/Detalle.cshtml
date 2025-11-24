@@ -35,6 +35,7 @@
     <img alt="portada" src="@Model.PortadaUrl" class="img-fluid" />
 }
 
+<!-- Contenedor donde se renderiza el contenido de la entrada -->
 <div id="contenido"></div>
 
 <hr />
@@ -100,5 +101,18 @@
         document.querySelectorAll('pre').forEach(elem => {
             hljs.highlightElement(elem);
         });
+
+        // Funcion para ajustar el ancho del contenedor del contenido al ancho de la img
+        function ajustarAncho() {
+            const imagen = document.querySelector('img.img-fluid');
+            const contenido = document.getElementById('contenido');
+
+            if (imagen && contenido) {
+                contenido.style.width = imagen.clientWidth + 'px';
+            }
+        }
+        // Ajustar el ancho al recargar la pagina y al cambiar el tamaño de la ventana
+        window.addEventListener("load", ajustarAncho);
+        window.addEventListener("resize", ajustarAncho);
     </script>
 }

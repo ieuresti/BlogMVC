@@ -2,6 +2,7 @@
 @using BlogMVC.Models
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> dbFactory
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -34,21 +35,51 @@
     }
 </div>
 
+@if (cargando)
+{
+    <div style="transform: translate(50%, 50%)">
+        <img width="150" class="mt-3" src="/img/loading.gif" />
+    </div>
+}
+
+<div id="cargar-mas" style="height: 10px;"></div>
+
 @code {
     private ApplicationDbContext? context { get; set; }
     private List<HomeIndexEntradaViewModel> entradas = [];
+    private int indice = 0;
+    private int cantidadRegistrosSolicitar = 20;
+    private bool seguirBuscandoEntradas = true;
+    private bool cargando = true;
 
-    // Inicializar el contexto cuando el componente se inicialice
+    // Metodo llamado al inicializar el componente
     protected override async Task OnInitializedAsync()
     {
+        // Inicializar el contexto de la BD
         context = dbFactory.CreateDbContext();
         await BuscarEntradas();
     }
 
+    // Metodo llamado después de que el componente se haya renderizado
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Solo registrar el observador la primera vez que se renderiza
+        if (firstRender)
+        {
+            // Registrar el observador de interseccion en el elemento "cargar-mas"
+            await JS.InvokeVoidAsync("observarElemento", "cargar-mas", DotNetObjectReference.Create(this));
+        }
+    }
+
+    // Metodo para buscar las entradas en la BD
     private async Task BuscarEntradas()
     {
-        entradas = await context!.Entradas
+        cargando = true;
+        StateHasChanged();
+        var entradasLocal = await context!.Entradas
             .OrderByDescending(x => x.FechaPublicacion)
+            .Skip(indice) // Saltar las entradas ya cargadas (en este caso 0 al inicio)
+            .Take(cantidadRegistrosSolicitar) // Tomar las siguientes entradas (en este caso 20)
             .Select(x => new HomeIndexEntradaViewModel
             {
                 Id = x.Id,
@@ -56,6 +87,30 @@
                 PortadaUrl = x.PortadaUrl,
                 FechaPublicacion = x.FechaPublicacion
             }).ToListAsync();
+        // Si ya no se encontraron entradas, dejar de buscar (se asigna false)
+        seguirBuscandoEntradas = entradasLocal.Any();
+        // Agregar las entradas encontradas a la lista principal
+        entradas.AddRange(entradasLocal);
+        // Actualizar el indice para la siguiente carga
+        indice += cantidadRegistrosSolicitar;
+        cargando = false;
+    }
+
+    [JSInvokable]
+    // Metodo invocado desde JS para cargar mas elementos
+    public async Task CargarMasElementos()
+    {
+        // Si ya se esta cargando, no hacer nada
+        if (cargando)
+        {
+            return;
+        }
+
+        if (seguirBuscandoEntradas)
+        {
+            await BuscarEntradas();
+            StateHasChanged(); // Notificar a Blazor que el estado del componente ha cambiado
+        }
     }
 
     // Liberar el contexto cuando el componente se destruya
