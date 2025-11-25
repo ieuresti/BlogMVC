@@ -1,3 +1,4 @@
+using BlogMVC.Configuraciones;
 using BlogMVC.Datos;
 using BlogMVC.Entidades;
 using BlogMVC.Servicios;
@@ -5,11 +6,26 @@ using BlogMVC.Utilidades;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using OpenAI;
 using System.Data;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar opciones de IA desde appsettings.json
+builder.Services.AddOptions<ConfiguracionesIA>()
+    .Bind(builder.Configuration.GetSection(ConfiguracionesIA.Seccion)) // Enlaza la sección "ConfiguracionesIA" del appsettings.json con la clase ConfiguracionesIA
+    .ValidateDataAnnotations() // Valida las anotaciones de datos en la clase ConfiguracionesIA
+    .ValidateOnStart(); // Valida las opciones al iniciar la app
+
+// Configurar OpenAIClient para inyeccion de dependencias
+builder.Services.AddScoped(sp =>
+{
+    var configuracionesIA = sp.GetRequiredService<IOptions<ConfiguracionesIA>>();
+    return new OpenAIClient(configuracionesIA.Value.LlaveOpenAI);
+});
 
 builder.Services.AddServerSideBlazor();
 
@@ -18,6 +34,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddTransient<IServicioUsuarios, ServicioUsuarios>();
+builder.Services.AddTransient<IServicioChat, ServicioChatOpenAI>();
+
 // Para inyectar DbContext en Blazor es recomendable usar AddDbContextFactory
 builder.Services.AddDbContextFactory<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection")
 // El seeding es el proceso de introducir datos iniciales o imprescindibles en la bd al arrancar la aplicación(ej roles, usuarios admin, datos de ej).Garantiza que la app tenga la config mínima necesaria para funcionar.

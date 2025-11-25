@@ -21,6 +21,7 @@
         <label class="form-label" asp-for="Cuerpo"></label>
         <input style="display: none;" class="form-control" asp-for="Cuerpo" />
         <div id="editor"></div>
+        <button type="button" onclick="generarCuerpo()" class="btn btn-secondary mt-2">Generar</button>
         <span id="cuerpo-error" asp-validation-for="Cuerpo" class="text-danger"></span>
     </div>
 
@@ -35,7 +36,75 @@
     <a class="btn btn-secondary" asp-action="Index" asp-controller="Home">Cancelar</a>
 </form>
 
+<!-- Modal para mostrar el contenido generado por la IA -->
+<div class="modal fade" id="modal-cuerpo-ia" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Artículo Generado por la IA</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Aqui se mostrará el contenido generado en streaming -->
+                <div id="output">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="aceptarCambiosCuerpoIA()">Aceptar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial"></partial>
     <script src="~/js/formulario-entradas.js" asp-append-version="true"></script>
+    
+    <script>
+        const modalCuerpoIA = new bootstrap.Modal(document.getElementById('modal-cuerpo-ia'));
+        let articuloSugeridoPorIA = '';
+
+        async function generarCuerpo() {
+            const titulo = document.getElementById('Titulo').value; // Obtener el titulo del input
+            // Llamar al endpoint para generar el cuerpo basado en el titulo
+            const respuesta = await fetch('/entradas/GenerarCuerpo?titulo=' + encodeURIComponent(titulo), {
+                method: 'GET'
+            });
+            // Si la respuesta no es correcta, mostrar el error
+            if (!respuesta.ok){
+                const contenido = await respuesta.text();
+                alert(contenido);
+                return;
+            }
+            // Leer la respuesta en streaming y actualizar el modal conforme llegan los datos
+            const output = document.getElementById('output');
+            output.innerHTML = ''; // Limpiar el contenido previo
+            const reader = respuesta.body.getReader(); // Obtener el reader para leer en streaming
+            const decoder = new TextDecoder(); // Decodificador de texto
+            let articulo = ""; // Variable para almacenar el articulo generado
+            modalCuerpoIA.show(); // Mostrar el modal
+            // Mientras haya datos, leerlos y actualizar el contenido del modal
+            while(true){
+                const { value, done } = await reader.read(); // Leer un chunk
+                // Si ya no hay mas datos, salir del bucle
+                if (done){
+                    break;
+                }
+                // Decodificar el chunk y agregarlo al articulo
+                articulo += decoder.decode(value, { stream: true });
+                output.innerHTML = articulo; // Actualizar el contenido del modal
+            }
+            // Guardar el articulo generado para usarlo despues
+            articuloSugeridoPorIA = articulo;
+        }
+
+        function aceptarCambiosCuerpoIA() {
+            // Insertar el contenido generado por la IA en el editor de Quill
+            const delta = quill.clipboard.convert({ html: articuloSugeridoPorIA });
+            // Establecer el contenido del editor sin disparar eventos
+            quill.setContents(delta, 'silent');
+            modalCuerpoIA.hide(); // Ocultar el modal
+        }
+    </script>
 }
