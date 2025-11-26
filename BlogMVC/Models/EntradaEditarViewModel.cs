@@ -14,5 +14,6 @@ namespace BlogMVC.Models
         public IFormFile? ImagenPortada { get; set; }
         public string? ImagenPortadaActual { get; set; }
         public bool ImagenRemovida { get; set; }
+        public string? ImagenPortadaIA { get; set; }
     }
 }

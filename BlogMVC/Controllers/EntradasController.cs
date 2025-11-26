@@ -16,18 +16,24 @@ namespace BlogMVC.Controllers
         private readonly IAlmacenadorArchivos almacenadorArchivos;
         private readonly IServicioUsuarios servicioUsuarios;
         private readonly IServicioChat servicioChat;
+        private readonly IServicioImagenes servicioImagenes;
+        private readonly IWebHostEnvironment env;
         private readonly string contenedor = "entradas";
 
         public EntradasController(
             ApplicationDbContext context,
             IAlmacenadorArchivos almacenadorArchivos,
             IServicioUsuarios servicioUsuarios,
-            IServicioChat servicioChat)
+            IServicioChat servicioChat,
+            IServicioImagenes servicioImagenes,
+            IWebHostEnvironment env)
         {
             this.context = context;
             this.almacenadorArchivos = almacenadorArchivos;
             this.servicioUsuarios = servicioUsuarios;
             this.servicioChat = servicioChat;
+            this.servicioImagenes = servicioImagenes;
+            this.env = env;
         }
 
         [HttpGet]
@@ -107,9 +113,13 @@ namespace BlogMVC.Controllers
             if (modelo.ImagenPortada is not null)
             {
                 portadaUrl = await almacenadorArchivos.Almacenar(contenedor, modelo.ImagenPortada);
+            } else if (modelo.ImagenPortadaIA is not null)
+            {
+                var archivo = Base64AIFormFile(modelo.ImagenPortadaIA);
+                portadaUrl = await almacenadorArchivos.Almacenar(contenedor, archivo);
             }
 
-            string usuarioId = servicioUsuarios.ObtenerUsuarioId();
+                string usuarioId = servicioUsuarios.ObtenerUsuarioId();
             var entrada = new Entrada
             {
                 Titulo = modelo.Titulo,
@@ -167,6 +177,9 @@ namespace BlogMVC.Controllers
             {
                 // Si no es null, significa que el usuario subio una nueva imagen para cambiarla por la actual
                 portadaUrl = await almacenadorArchivos.Editar(modelo.ImagenPortadaActual, contenedor, modelo.ImagenPortada);
+            } else if (modelo.ImagenPortadaIA is not null) {
+                var archivo = Base64AIFormFile(modelo.ImagenPortadaIA);
+                portadaUrl = await almacenadorArchivos.Editar(modelo.ImagenPortadaActual, contenedor, archivo);
             } else if (modelo.ImagenRemovida)
             {
                 // El usuario decidio borrar la imagen actual sin subir una nueva
@@ -218,6 +231,37 @@ namespace BlogMVC.Controllers
                 await Response.WriteAsync(segmento);
                 await Response.Body.FlushAsync();
             }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GenerarImagen([FromQuery] string titulo)
+        {
+            if (string.IsNullOrWhiteSpace(titulo))
+            {
+                return BadRequest("El título no puede estar vacío.");
+            }
+
+            //if (env.IsDevelopment())
+            //{
+            //    var rutaImagen = Path.Combine(env.WebRootPath, "img", "ia.png");
+            //    var imagenBytes = await System.IO.File.ReadAllBytesAsync(rutaImagen);
+            //    await Task.Delay(1000);
+            //    return File(imagenBytes, "image/png");
+            //}
+            //var bytes = new byte[0];
+
+            var bytes = await servicioImagenes.GenerarPortadaEntrada(titulo);
+
+            return File(bytes, "image/png");
+        }
+
+        private IFormFile Base64AIFormFile(string base64)
+        {
+            byte[] bytes = Convert.FromBase64String(base64);
+            var stream = new MemoryStream(bytes);
+            IFormFile archivo = new FormFile(stream, 0, bytes.Length, "imagen", "imagen.png");
+            return archivo;
         }
     }
 }

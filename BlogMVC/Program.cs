@@ -35,6 +35,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddTransient<IServicioUsuarios, ServicioUsuarios>();
 builder.Services.AddTransient<IServicioChat, ServicioChatOpenAI>();
+builder.Services.AddTransient<IServicioImagenes, ServicioImagenesOpenAI>();
 
 // Para inyectar DbContext en Blazor es recomendable usar AddDbContextFactory
 builder.Services.AddDbContextFactory<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection")

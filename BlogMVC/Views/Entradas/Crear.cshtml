@@ -26,9 +26,17 @@
     </div>
 
     <div class="mb-3">
+        <input type="hidden" asp-for="ImagenPortadaIA" />
         <label class="form-label" asp-for="ImagenPortada"></label>
         <input type="file" class="form-control" asp-for="ImagenPortada" onchange="mostrarPrevisualizacion(event)" />
         <img id="PreviewImagen" class="mt-3" style="display: none; width: 400px;" />
+        <!-- Espacio para el gif de carga -->
+        <div>
+            <img id="loading-imagen-ia" class="mt-2 mb-2" style="width: 100px; display: none" src="~/img/loading.gif" />
+        </div>
+
+        <button type="button" class="btn btn-secondary mt-2" onclick="generarImagen()">Generar</button>
+
         <span asp-validation-for="ImagenPortada" class="text-danger"></span>
     </div>
 

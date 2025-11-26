@@ -62,3 +62,50 @@ function mostrarPrevisualizacion(event) {
         imagenPreview.style.display = 'block'; // Se muestra la img
     }
 }
+
+async function generarImagen() {
+    const titulo = document.getElementById('Titulo').value;
+
+    if (!titulo) {
+        alert('El título no puede estar vacío');
+        return;
+    }
+
+    const ImagenPortadaInput = document.getElementById('ImagenPortada');
+    ImagenPortadaInput.value = '';
+
+    const imagenPreview = document.getElementById('PreviewImagen');
+    imagenPreview.style.display = "none";
+
+    const loading = document.getElementById('loading-imagen-ia');
+    loading.style.display = "block";
+
+    const respuesta = await fetch('/entradas/GenerarImagen?titulo=' + encodeURIComponent(titulo));
+
+    if (!respuesta.ok) {
+        const contenido = await respuesta.text();
+        alert(contenido);
+        return;
+    }
+
+    const blob = await respuesta.blob();
+    imagenPreview.src = URL.createObjectURL(blob);
+    imagenPreview.style.display = "block";
+    loading.style.display = "none";
+
+    const base64String = await convertirBlobABase64(blob);
+    document.getElementById('ImagenPortadaIA').value = base64String;
+}
+
+async function convertirBlobABase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+            const base64String = reader.result.split(",")[1];
+            resolve(base64String);
+        }
+
+        reader.onerror = reject;
+    });
+}
